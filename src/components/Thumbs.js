@@ -33,7 +33,8 @@ class Thumbs extends Component {
             visibleItems: 0,
             lastPosition: 0,
             showArrows: false,
-            images: this.getImages()
+            images: this.getImages().images,
+            labels: this.getImages().labels
         }
     }
 
@@ -50,7 +51,7 @@ class Thumbs extends Component {
         }
         if (props.children !== this.props.children) {
             this.setState({
-               images: this.getImages()
+               images: this.getImages().images
             });
         }
     }
@@ -75,14 +76,14 @@ class Thumbs extends Component {
 
     setItemsListRef = node => {
         this.itemsListRef = node;
-    }
+    };
 
     setThumbsRef = (node, index) => {
         if (!this.thumbsRef) {
             this.thumbsRef = [];
         }
         this.thumbsRef[index] = node;
-    }
+    };
 
     setupThumbs() {
         // as the widths are calculated, we need to resize
@@ -125,32 +126,37 @@ class Thumbs extends Component {
     getImages() {
         const images = Children.map(this.props.children, (item, index) => {
             let img = item;
-
+            let name = item;
             // if the item is not an image, try to find the first image in the item's children.
             if (item.type !== "img") {
                 img = Children.toArray(item.props.children).filter((children) => children.type === "img")[0];
+                name = Children.toArray(item.props.children).filter((children) => children.key === "label")?Children.toArray(item.props.children).filter((children) => children.key === "label")[0].props.children[0]:'Item'+index;
             }
 
             if (!img || img.length === 0) {
                 return null;
             }
 
-            return img;
+            if(!name && name===undefined){
+                name = 'Item'+index;
+            }
+
+            return {images:img, labels:name};
         });
 
-        if (images.filter(image => image !== null).length === 0) {
+        if (images.filter(image => image.images !== null).length === 0) {
             console.warn(`No images found! Can't build the thumb list without images. If you don't need thumbs, set showThumbs={false} in the Carousel. Note that it's not possible to get images rendered inside custom components. More info at https://github.com/leandrowd/react-responsive-carousel/blob/master/TROUBLESHOOTING.md`);
 
             return null;
         }
 
-        return images;
+        return {images:images, labels:name};
     }
 
     setMountState = () => {
         this.setState({hasMount: true});
         this.updateSizes();
-    }
+    };
 
     handleClickItem = (index, item) => {
         const handler = this.props.onSelectItem;
@@ -158,13 +164,13 @@ class Thumbs extends Component {
         if (typeof handler === 'function') {
             handler(index, item);
         }
-    }
+    };
 
     onSwipeStart = () => {
         this.setState({
             swiping: true
         });
-    }
+    };
 
     onSwipeEnd = () => {
         this.setState({
@@ -263,6 +269,7 @@ class Thumbs extends Component {
             return (
                 <li {...thumbProps}>
                     { img }
+                    <p>{this.state.labels[index]}</p>
                 </li>
             );
         });
